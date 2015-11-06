@@ -1,5 +1,10 @@
 <template name="login">
-	Log in to start a game.
-
-	<a href="#" class="button button--facebook">Log in with facebook</a>
+	{{ #if currentUser }}
+		Logged in:
+		{{ currentUser.profile.name }}
+		<a href="#" class="button button--logout">Log out</a>
+	{{ else }}
+		Log in to start a game.
+		<a href="#" class="button button--facebook">Log in with facebook</a>
+	{{ /if }}
 </template>
