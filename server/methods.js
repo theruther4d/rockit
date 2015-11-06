@@ -11,10 +11,9 @@ Meteor.methods({
 
 		var unfilledGame = Games.findOne( { unfilled: true } );
 
+
 		// Player 2:
 		if( unfilledGame ) {
-			console.log( 'adding to unfilled game' );
-
 			Games.update( unfilledGame._id, {
 				$set: {
 					player2: this.userId,
@@ -22,22 +21,47 @@ Meteor.methods({
 				}
 			});
 
+			Meteor.users.update( this.userId, {
+				$set: {
+					score: 0
+				}
+			}, function( err, res ) {
+				if( err ) {
+					console.log( 'error setting intial score: ', err );
+				} else {
+					console.log( 'result of setting intial score: ', res );
+				}
+			});
+
 			return {
 				gameId: unfilledGame._id,
-				route: '/player2'
+				route: '/player2',
+				whichPlayer: 'player2'
 			};
 		}
 
 		// Player 1:
 		else {
-			console.log( 'no unfilled games, create a new one' );
+
+			Meteor.users.update( this.userId, {
+				$set: {
+					score: 0
+				}
+			}, function( err, res ) {
+				if( err ) {
+					console.log( 'error setting intial score: ', err );
+				} else {
+					console.log( 'result of setting intial score: ', res );
+				}
+			});
 
 			return {
 				gameId: ( Games.insert( {
 					player1: this.userId,
 					unfilled: true
 				})),
-				route: '/player1'
+				route: '/player1',
+				whichPlayer: 'player1'
 			};
 		}
 	},
@@ -46,13 +70,10 @@ Meteor.methods({
 		var currentUser		= Meteor.users.findOne( this.userId ),
 			gameId			= currentUser.currentGame,
 			currentGame		= Games.findOne( gameId ),
+			otherUserId		= currentGame.user1 == currentUser._id ? currentGame.user2 : currentGame.user1,
+			otherUser		= Meteor.users.findOne( otherUserId ),
 			roundNo			= typeof currentGame.rounds == "undefined" ? 0 : currentGame.rounds.length - 1,
-			whichPlayer		= currentGame.player1 == currentUser._id ? "player1" : "player2",
-			roundHasStarted	= typeof currentGame.rounds !== 'undefined' && typeof currentGame.rounds[roundNo] !== 'undefined' && currentGame.rounds[roundNo].length;
-
-		console.log( 'roundNo: ', roundNo );
-		console.log( 'whichPlayer: ', whichPlayer );
-		console.log( 'roundHasStarted: ', roundHasStarted );
+			whichPlayer		= currentGame.player1 == currentUser._id ? "player1" : "player2";
 
 		function getWinner( round ) {
 			var roundKeys	= Object.keys( round ),
@@ -81,6 +102,8 @@ Meteor.methods({
 				} else if( choice2 == "paper" ) {
 					return roundKeys[0];				// scissors vs paper, user1 wins
 				}
+
+				return "draw";
 			}
 		}
 
@@ -88,8 +111,8 @@ Meteor.methods({
 			var rounds	= [],
 				round	= {};
 
-			round[whichPlayer] = choice;
-			rounds[0] = round;
+			round[currentUser._id] = choice;
+			rounds.push( round );
 
 			Games.update( gameId, {
 				$set: {
@@ -107,23 +130,33 @@ Meteor.methods({
 
 					// Set data for this round:
 					var currentRound = currentGame.rounds[roundNo];
-					currentRound[whichPlayer] = choice;
+					currentRound[currentUser._id] = choice;
 
 					// Get the winner of this round:
 					var winner = getWinner( currentRound );
 					currentRound['winner'] = winner;
 
+					Meteor.users.update( currentRound['winner'], {
+						$inc: {
+							score: 1
+						}
+					});
+
 					Games.update( gameId, {
-						$set: {
+						$pop: {
+							rounds: 1
+						}
+					});
+
+					Games.update( gameId, {
+						$push: {
 							rounds: currentRound
 						}
 					});
 				} else {
-					console.log( 'currentGame.rounds[roundNo] was undefined' );
 					startRound();
 				}
 			} else {
-				console.log( 'currentGame.rounds was undefined' );
 				startRound();
 			}
 		} else {

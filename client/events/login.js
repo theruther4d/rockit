@@ -12,6 +12,8 @@ Template.login.events( {
 					} else {
 						console.log( 'res: ', res );
 						FlowRouter.go( res.route );
+						Session.set( 'playerScore', 0 );
+						Session.set( 'whichPlayer', res.whichPlayer );
 						Meteor.users.update( Meteor.userId(), {
 							$set: {
 								"currentGame": res.gameId

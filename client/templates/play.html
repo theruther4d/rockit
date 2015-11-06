@@ -1,6 +1,12 @@
 <template name="play">
 	{{ #if gameReady }}
+		<span class="score">{{ currentUser.profile.name }}: {{ playerScore }} {{ otherUser }}: {{ otherPlayerScore }}</span>
 		<h3>Let's play!</h3>
+
+		{{ #if roundHasWinner }}
+			<h3>{{ roundHasWinner }}</h3>
+		{{ /if }}
+
 		{{> choices }}
 	{{ else }}
 		<h3>Waiting on opponent...</h3>
