@@ -4,10 +4,20 @@ Template.login.events( {
 
 		Meteor.loginWithFacebook( {}, function( err ) {
 			if( err ) {
-				// Do something with the error
 				console.log( 'login error: ', err );
 			} else {
-				Meteor.call( 'createGame' );
+				Meteor.call( 'createGame', function( err, res) {
+					if( err ) {
+						console.log( 'error calling createGame method' );
+					} else {
+						FlowRouter.go( res.route );
+						Meteor.users.update( Meteor.userId(), {
+							$set: {
+								"currentGame": res.gameId
+							}
+						});
+					}
+				});
 			}
 		});
 	},

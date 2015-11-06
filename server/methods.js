@@ -5,35 +5,38 @@ Meteor.methods({
 		// * Fix issue where one user
 		//   can become his own opponent
 		//
-		// * Add /player1 and /player2 routes
+		// * Fix access issue for updating
+		// * User currentGame
 		//
 
 		var unfilledGame = Games.findOne( { unfilled: true } );
 
-		// Player 1:
+		// Player 2:
 		if( unfilledGame ) {
 			console.log( 'adding to unfilled game' );
 
-			Games.update( unfilledGame._id, {
-				$set: {
-					player2: this.userId,
-					unfilled: false
-				}
-			});
-
-			FlowRouter.go( '/player1' );
+			return {
+				gameId: ( Games.update( unfilledGame._id, {
+					$set: {
+						player2: this.userId,
+						unfilled: false
+					}
+				})),
+				route: '/player2'
+			};
 		}
 
-		// Player 2:
+		// Player 1:
 		else {
 			console.log( 'no unfilled games, create a new one' );
 
-			Games.insert( {
-				player1: this.userId,
-				unfilled: true
-			});
-
-			FlowRouter.go( '/player2' );
+			return {
+				gameId: ( Games.insert( {
+					player1: this.userId,
+					unfilled: true
+				})),
+				route: '/player1'
+			};
 		}
 	}
 });
