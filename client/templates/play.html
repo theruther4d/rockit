@@ -1,3 +1,15 @@
 <template name="play">
-	<h3>Let's play!</h3>
+	{{ #if gameReady }}
+		<h3>Let's play!</h3>
+		{{> choices }}
+	{{ else }}
+		<h3>Waiting on opponent...</h3>
+	{{ /if }}
+</template>
+
+<template name="choices">
+	<h4>Choose your move</h4>
+	<a href="#" class="button choice choice--rock" data-choice="rock">Rock</a>
+	<a href="#" class="button choice choice--paper" data-choice="paper">Paper</a>
+	<a href="#" class="button choice choice--scissors" data-choice="scissors">Scissors</a>
 </template>

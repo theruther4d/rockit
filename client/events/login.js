@@ -10,6 +10,7 @@ Template.login.events( {
 					if( err ) {
 						console.log( 'error calling createGame method' );
 					} else {
+						console.log( 'res: ', res );
 						FlowRouter.go( res.route );
 						Meteor.users.update( Meteor.userId(), {
 							$set: {
