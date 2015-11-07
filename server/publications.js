@@ -7,6 +7,7 @@ Meteor.publish( 'users', function() {
 		"currentGame": true,
 		"services.facebook.name": true,
 		"profile.name": true,
+		"profile.picture": true,
 		"score": true
 	}});
 });

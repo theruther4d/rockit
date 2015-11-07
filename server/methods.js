@@ -6,12 +6,6 @@ Meteor.methods({
 	** player waiting for a second.
 	*/
 	createGame: function() {
-		// TODO:
-		// ~~~~~
-		// * Fix allow functions to be
-		//   secure
-		//
-
 		var unfilledGame = Games.findOne( { unfilled: true } );
 
 

@@ -19,27 +19,12 @@ Template.play.helpers({
 	otherUser: function() {
 		if( Meteor.user() && typeof Meteor.user().currentGame !== 'undefined' ) {
 			var currentGame 	= Games.findOne( Meteor.user().currentGame ),
-				otherUserId		= currentGame.player1 == Meteor.userId() ? currentGame.player2 : currentGame.player1,
-				otherUserObj	=  Meteor.users.findOne( otherUserId );
+				otherUserId		= currentGame.player1 == Meteor.userId() ? currentGame.player2 : currentGame.player1;
 
-			return otherUserObj.profile.name;
+			return Meteor.users.findOne( otherUserId );
 		}
 
 		return "anonymous";
-	},
-
-	/*
-	** Gets the current users's
-	** score.
-	*/
-	playerScore: function() {
-		if( Meteor.user() ) {
-			if( typeof Meteor.user().score !== 'undefined' ) {
-				return Meteor.user().score;
-			}
-		}
-
-		return "?";
 	},
 
 	/*

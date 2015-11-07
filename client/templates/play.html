@@ -1,6 +1,15 @@
 <template name="play">
 	{{ #if gameReady }}
-		<span class="score">{{ currentUser.profile.name }}: {{ playerScore }} {{ otherUser }}: {{ otherPlayerScore }}</span>
+		<ul class="scores">
+			<li class="score">
+				<img class='user__photo' src='{{ currentUser.profile.picture }}' />
+				{{ currentUser.profile.name }}: {{ currentUser.score }}
+			</li>
+			<li class="score">
+				<img class='user__photo' src='{{ otherUser.profile.picture }}' />
+			  {{ otherUser.profile.name }}: {{ otherUser.score }}
+			</li>
+		</ul>
 
 		{{ #if roundHasWinner }}
 			<h3>{{ roundHasWinner }}</h3>
@@ -9,7 +18,7 @@
 			<h3>Pick your poison:</h3>
 
 			{{ #if waitingOnUserChoice }}
-				<h4>Waiting on {{ otherUser }} to play...</h4>
+				<h4>Waiting on {{ otherUser.profile.name }} to play...</h4>
 			{{ else }}
 				{{> choices }}
 			{{ /if }}
