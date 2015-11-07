@@ -10,7 +10,6 @@ Template.login.events( {
 					if( err ) {
 						console.log( 'error calling createGame method' );
 					} else {
-						console.log( 'res: ', res );
 						FlowRouter.go( res.route );
 						Session.set( 'playerScore', 0 );
 						Session.set( 'whichPlayer', res.whichPlayer );

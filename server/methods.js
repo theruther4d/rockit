@@ -1,10 +1,13 @@
 Meteor.methods({
+	/*
+	** Determines if a new game needs
+	** to be created for the user, or
+	** if there's a game with only one
+	** player waiting for a second.
+	*/
 	createGame: function() {
 		// TODO:
 		// ~~~~~
-		// * Fix issue where one user
-		//   can become his own opponent
-		//
 		// * Fix allow functions to be
 		//   secure
 		//
@@ -14,6 +17,17 @@ Meteor.methods({
 
 		// Player 2:
 		if( unfilledGame ) {
+
+			// Don't allow one user to
+			// become their own partner:
+			if( unfilledGame.player1 == this.userId ) {
+				return {
+					gameId: unfilledGame._id,
+					route: '/player1',
+					whichPlayer: 'player1'
+				};
+			}
+
 			Games.update( unfilledGame._id, {
 				$set: {
 					player2: this.userId,
@@ -24,12 +38,6 @@ Meteor.methods({
 			Meteor.users.update( this.userId, {
 				$set: {
 					score: 0
-				}
-			}, function( err, res ) {
-				if( err ) {
-					console.log( 'error setting intial score: ', err );
-				} else {
-					console.log( 'result of setting intial score: ', res );
 				}
 			});
 
@@ -47,12 +55,6 @@ Meteor.methods({
 				$set: {
 					score: 0
 				}
-			}, function( err, res ) {
-				if( err ) {
-					console.log( 'error setting intial score: ', err );
-				} else {
-					console.log( 'result of setting intial score: ', res );
-				}
 			});
 
 			return {
@@ -66,15 +68,42 @@ Meteor.methods({
 		}
 	},
 
+	/*
+	** Takes the user choice and returns the
+	** winner if the other user has already
+	** sent their choice.
+	*/
 	makeChoice: function( choice ) {
 		var currentUser		= Meteor.users.findOne( this.userId ),
 			gameId			= currentUser.currentGame,
 			currentGame		= Games.findOne( gameId ),
-			otherUserId		= currentGame.user1 == currentUser._id ? currentGame.user2 : currentGame.user1,
-			otherUser		= Meteor.users.findOne( otherUserId ),
-			roundNo			= typeof currentGame.rounds == "undefined" ? 0 : currentGame.rounds.length - 1,
-			whichPlayer		= currentGame.player1 == currentUser._id ? "player1" : "player2";
+			roundNo			= 0;
 
+		// The rounds array already exists:
+		if( typeof currentGame.rounds !== 'undefined' ) {
+
+			// There's already at least one round:
+			if( currentGame.rounds.length ) {
+
+				var roundEntries = Object.keys( currentGame.rounds[currentGame.rounds.length - 1] );
+
+				// If the current round already has at
+				// least 2 entries (meaning both players
+				// have made their choice) it's time to
+				// create a new round:
+				if( roundEntries.length > 1 ) {
+					roundNo = currentGame.rounds.length;
+				}
+
+				// Otherwise, let's finish up the current round:
+				else {
+					roundNo = currentGame.rounds.length - 1;
+				}
+			}
+		}
+
+		// Takes a round object as the argument,
+		// returns the winner ID or 'draw' for a tie:
 		function getWinner( round ) {
 			var roundKeys	= Object.keys( round ),
 				choice1		= round[roundKeys[0]],
@@ -107,8 +136,9 @@ Meteor.methods({
 			}
 		}
 
+		// Starts a new round:
 		function startRound() {
-			var rounds	= [],
+			var rounds	= currentGame.rounds || [],
 				round	= {};
 
 			round[currentUser._id] = choice;
@@ -121,12 +151,14 @@ Meteor.methods({
 			});
 		}
 
-		// if this is the first round:
-		if( !roundNo ) {
-			if( typeof currentGame.rounds !== 'undefined' ) {
+		// Do the business:
+		if( typeof currentGame.rounds !== 'undefined' ) {
+
+			// The round has already exists:
+			if( typeof currentGame.rounds[roundNo] !== 'undefined' ) {
 
 				// The round has already been started by the other player:
-				if( typeof currentGame.rounds[roundNo] !== 'undefined' ) {
+				if( Object.keys( currentGame.rounds[roundNo] ).length ) {
 
 					// Set data for this round:
 					var currentRound = currentGame.rounds[roundNo];
@@ -136,31 +168,46 @@ Meteor.methods({
 					var winner = getWinner( currentRound );
 					currentRound['winner'] = winner;
 
+					// Tell the winner they won:
 					Meteor.users.update( currentRound['winner'], {
 						$inc: {
 							score: 1
 						}
 					});
 
+					// Remove the outdated round:
 					Games.update( gameId, {
 						$pop: {
 							rounds: 1
 						}
 					});
 
+					// Push the updated round:
 					Games.update( gameId, {
 						$push: {
 							rounds: currentRound
 						}
 					});
-				} else {
-					startRound();
+
+					return currentRound['winner'];
 				}
-			} else {
-				startRound();
 			}
-		} else {
-			console.log( 'on round 2 or higher' );
 		}
+
+		// The round hasn't begun yet, start it:
+		startRound();
+	},
+
+	/*
+	** Forces a new round creation:
+	*/
+	forceNewRound: function() {
+		var currentGameId = Meteor.users.findOne( this.userId ).currentGame;
+
+		Games.update( currentGameId, {
+			$push : {
+				rounds: {}
+			}
+		});
 	}
 });
